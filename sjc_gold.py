@@ -16,6 +16,7 @@ import datetime
 import json
 import os
 from typing import Dict, Any, List
+from utils import normalize_prices_for_ai
 
 # Ensure UTF-8 output on Windows consoles
 if sys.platform == "win32":
@@ -181,35 +182,6 @@ def fetch_gold_prices_from_sjc() -> Dict[str, Dict[str, str]]:
         return {"error": f"Error fetching SJC API: {e}"}
 
 
-def normalize_prices_for_ai(raw_prices: Dict[str, Dict[str, str]], source_url: str) -> List[Dict[str, Any]]:
-    """
-    Convert raw mapping to a structured list of records for AI / machine consumption.
-    raw_prices: {"Product": {"Mua vào": "76.500", "Bán ra": "77.100"}}
-    Returns list of records with price_buy, price_sell, unit, updated_at, source.
-    """
-    out: List[Dict[str, Any]] = []
-    ts = datetime.datetime.now(datetime.timezone.utc).astimezone().isoformat()
-    for product, prices in raw_prices.items():
-        # skip errors
-        if product == "error":
-            continue
-        # Extract region from product name (format: "TypeName - BranchName")
-        region = "Miền Bắc"  # Default
-        product_parts = product.split(" - ")
-        if len(product_parts) >= 2:
-            region = product_parts[-1]  # BranchName is the last part
-        
-        record = {
-            "product": product,
-            "region": region,
-            "price_buy": prices.get("Mua vào", ""),
-            "price_sell": prices.get("Bán ra", ""),
-            "unit": "Triệu đồng một lượng",
-            "updated_at": ts,
-            "source": source_url
-        }
-        out.append(record)
-    return out
 
 
 # MCP tool that returns structured data suitable for AI
@@ -228,6 +200,17 @@ def get_gold_prices() -> dict:
 
 
 # Additional tool to get specifically northern region prices
+def get_gold_prices_by_region(region_filter: str) -> dict:
+    """
+    Generic helper to get SJC gold prices filtered by region.
+    region_filter: String to search for in the region field (e.g., "Miền Bắc", "Hồ Chí Minh", etc.)
+    """
+    raw = fetch_gold_prices_from_sjc()
+    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/", "gold")
+    filtered_prices = [item for item in structured if region_filter in item.get("region", "")]
+    return {"data": filtered_prices, "schema_version": "1.0"}
+
+
 @mcp.tool()
 def get_northern_gold_prices() -> dict:
     """
@@ -237,145 +220,55 @@ def get_northern_gold_prices() -> dict:
        "schema_version": "1.0" }
     On failure returns {"error": "..."}
     """
-    raw = fetch_gold_prices_from_sjc()
-    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
-    # Filter for Northern region (in this implementation, we're already targeting northern region)
-    northern_prices = [item for item in structured if "Miền Bắc" in item.get("region", "")]
-    return {"data": northern_prices, "schema_version": "1.0"}
+    return get_gold_prices_by_region("Miền Bắc")
 
 
 # Additional tools for specific regions
 @mcp.tool()
 def get_hcm_gold_prices() -> dict:
-    """
-    MCP tool entrypoint to get SJC gold prices specifically for Ho Chi Minh City region.
-    Returns:
-      {"data": [ {product, region, price_buy, price_sell, unit, updated_at, source}, ... ],
-       "schema_version": "1.0" }
-    On failure returns {"error": "..."}
-    """
-    raw = fetch_gold_prices_from_sjc()
-    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
-    hcm_prices = [item for item in structured if "Hồ Chí Minh" in item.get("region", "")]
-    return {"data": hcm_prices, "schema_version": "1.0"}
-
+    """Get SJC gold prices for Ho Chi Minh City region."""
+    return get_gold_prices_by_region("Hồ Chí Minh")
 
 @mcp.tool()
 def get_halong_gold_prices() -> dict:
-    """
-    MCP tool entrypoint to get SJC gold prices specifically for Ha Long region.
-    Returns:
-      {"data": [ {product, region, price_buy, price_sell, unit, updated_at, source}, ... ],
-       "schema_version": "1.0" }
-    On failure returns {"error": "..."}
-    """
-    raw = fetch_gold_prices_from_sjc()
-    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
-    halong_prices = [item for item in structured if "Hạ Long" in item.get("region", "")]
-    return {"data": halong_prices, "schema_version": "1.0"}
-
+    """Get SJC gold prices for Ha Long region."""
+    return get_gold_prices_by_region("Hạ Long")
 
 @mcp.tool()
 def get_haiphong_gold_prices() -> dict:
-    """
-    MCP tool entrypoint to get SJC gold prices specifically for Hai Phong region.
-    Returns:
-      {"data": [ {product, region, price_buy, price_sell, unit, updated_at, source}, ... ],
-       "schema_version": "1.0" }
-    On failure returns {"error": "..."}
-    """
-    raw = fetch_gold_prices_from_sjc()
-    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
-    haiphong_prices = [item for item in structured if "Hải Phòng" in item.get("region", "")]
-    return {"data": haiphong_prices, "schema_version": "1.0"}
-
+    """Get SJC gold prices for Hai Phong region."""
+    return get_gold_prices_by_region("Hải Phòng")
 
 @mcp.tool()
 def get_central_gold_prices() -> dict:
-    """
-    MCP tool entrypoint to get SJC gold prices specifically for Central region.
-    Returns:
-      {"data": [ {product, region, price_buy, price_sell, unit, updated_at, source}, ... ],
-       "schema_version": "1.0" }
-    On failure returns {"error": "..."}
-    """
-    raw = fetch_gold_prices_from_sjc()
-    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
-    central_prices = [item for item in structured if "Miền Trung" in item.get("region", "")]
-    return {"data": central_prices, "schema_version": "1.0"}
-
+    """Get SJC gold prices for Central region."""
+    return get_gold_prices_by_region("Miền Trung")
 
 @mcp.tool()
 def get_hue_gold_prices() -> dict:
-    """
-    MCP tool entrypoint to get SJC gold prices specifically for Hue region.
-    Returns:
-      {"data": [ {product, region, price_buy, price_sell, unit, updated_at, source}, ... ],
-       "schema_version": "1.0" }
-    On failure returns {"error": "..."}
-    """
-    raw = fetch_gold_prices_from_sjc()
-    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
-    hue_prices = [item for item in structured if "Huế" in item.get("region", "")]
-    return {"data": hue_prices, "schema_version": "1.0"}
-
+    """Get SJC gold prices for Hue region."""
+    return get_gold_prices_by_region("Huế")
 
 @mcp.tool()
 def get_quangngai_gold_prices() -> dict:
-    """
-    MCP tool entrypoint to get SJC gold prices specifically for Quang Ngai region.
-    Returns:
-      {"data": [ {product, region, price_buy, price_sell, unit, updated_at, source}, ... ],
-       "schema_version": "1.0" }
-    On failure returns {"error": "..."}
-    """
-    raw = fetch_gold_prices_from_sjc()
-    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
-    quangngai_prices = [item for item in structured if "Quảng Ngãi" in item.get("region", "")]
-    return {"data": quangngai_prices, "schema_version": "1.0"}
-
+    """Get SJC gold prices for Quang Ngai region."""
+    return get_gold_prices_by_region("Quảng Ngãi")
 
 @mcp.tool()
 def get_nhatrang_gold_prices() -> dict:
-    """
-    MCP tool entrypoint to get SJC gold prices specifically for Nha Trang region.
-    Returns:
-      {"data": [ {product, region, price_buy, price_sell, unit, updated_at, source}, ... ],
-       "schema_version": "1.0" }
-    On failure returns {"error": "..."}
-    """
-    raw = fetch_gold_prices_from_sjc()
-    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
-    nhatrang_prices = [item for item in structured if "Nha Trang" in item.get("region", "")]
-    return {"data": nhatrang_prices, "schema_version": "1.0"}
-
+    """Get SJC gold prices for Nha Trang region."""
+    return get_gold_prices_by_region("Nha Trang")
 
 @mcp.tool()
 def get_bienhoa_gold_prices() -> dict:
-    """
-    MCP tool entrypoint to get SJC gold prices specifically for Bien Hoa region.
-    Returns:
-      {"data": [ {product, region, price_buy, price_sell, unit, updated_at, source}, ... ],
-       "schema_version": "1.0" }
-    On failure returns {"error": "..."}
-    """
-    raw = fetch_gold_prices_from_sjc()
-    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
-    bienhoa_prices = [item for item in structured if "Biên Hòa" in item.get("region", "")]
-    return {"data": bienhoa_prices, "schema_version": "1.0"}
-
+    """Get SJC gold prices for Bien Hoa region."""
+    return get_gold_prices_by_region("Biên Hòa")
 
 @mcp.tool()
 def get_southern_gold_prices() -> dict:
-    """
-    MCP tool entrypoint to get SJC gold prices specifically for Southern region (Mien Tay, Bac Lieu, Ca Mau, etc.).
-    Returns:
-      {"data": [ {product, region, price_buy, price_sell, unit, updated_at, source}, ... ],
-       "schema_version": "1.0" }
-    On failure returns {"error": "..."}
-    """
+    """Get SJC gold prices for Southern region."""
     raw = fetch_gold_prices_from_sjc()
-    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
+    structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/", "gold")
     southern_prices = [item for item in structured if any(region in item.get("region", "") for region in ["Miền Tây", "Bạc Liêu", "Cà Mau"])]
     return {"data": southern_prices, "schema_version": "1.0"}
 

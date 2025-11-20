@@ -12,8 +12,8 @@ import requests
 import re
 import logging
 import sys
-import datetime
 from typing import Dict, Any, List
+from utils import normalize_prices_for_ai, clean_number_string
 
 # Ensure UTF-8 output on Windows consoles
 if sys.platform == "win32":
@@ -141,29 +141,6 @@ def fetch_fuel_prices_from_webgia() -> Dict[str, Dict[str, str]]:
         return {"error": str(e)}
 
 
-def normalize_prices_for_ai(raw_prices: Dict[str, Dict[str, str]], source_url: str) -> List[Dict[str, Any]]:
-    """
-    Convert raw mapping to a structured list of records for AI / machine consumption.
-    raw_prices: {"Product": {"Vùng 1": "21.050", "Vùng 2": "21.470"}}
-    Returns list of records with price_display (str), unit, updated_at, source.
-    """
-    out: List[Dict[str, Any]] = []
-    ts = datetime.datetime.now(datetime.timezone.utc).astimezone().isoformat()
-    for product, regions in raw_prices.items():
-        # skip errors
-        if product == "error":
-            continue
-        for region_name, display_val in regions.items():
-            record = {
-                "product": product,
-                "region": region_name,
-                "price_display": display_val,
-                "unit": "nghìn đồng",
-                "updated_at": ts,
-                "source": source_url
-            }
-            out.append(record)
-    return out
 
 
 # MCP tool that returns structured data suitable for AI
@@ -177,14 +154,14 @@ def get_fuel_prices() -> dict:
     On failure returns {"error": "..."}
     """
     raw = fetch_fuel_prices_from_webgia()
-    structured = normalize_prices_for_ai(raw, "https://webgia.com/gia-xang-dau/petrolimex/")
+    structured = normalize_prices_for_ai(raw, "https://webgia.com/gia-xang-dau/petrolimex/", "fuel")
     return {"data": structured, "schema_version": "1.0"}
 
 
 if __name__ == "__main__":
     logger.info("Running debug fetch for Petrolimex fuel prices (webgia source)")
     raw = fetch_fuel_prices_from_webgia()
-    result = normalize_prices_for_ai(raw, "https://webgia.com/gia-xang-dau/petrolimex/")
+    result = normalize_prices_for_ai(raw, "https://webgia.com/gia-xang-dau/petrolimex/", "fuel")
     logger.info("Result: %s", {"data": result, "schema_version": "1.0"})
     try:
         # Start MCP server (stdio transport)
