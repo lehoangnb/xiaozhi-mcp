@@ -1,0 +1,14 @@
+services:
+  xiaozhi-mcp:
+    build:
+      context: https://github.com/lehoangnb/xiaozhi-mcp.git
+      dockerfile: docker/Dockerfile
+    environment:
+      - MCP_ENDPOINT=your_xiaozhi_endpoint
+    #  - SERVER_PATH=custom server py path
+    # Adjust ports as needed for your MCP server
+    # ports:
+    #   - "8000:8000"
+    # If you need to mount a config file, uncomment below:
+    # volumes:
+    #   - ./mcp_config.json:/app/mcp_config.json
