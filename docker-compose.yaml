@@ -18,8 +18,8 @@ services:
   # Service 1: Xiaozhi Adapter with MP3 API (Convert to Xiaozhi format)
   mp3-proxy:
     build:
-      context: ./mp3-proxy
-      dockerfile: Dockerfile
+      context: https://github.com/lehoangnb/xiaozhi-mcp.git
+      dockerfile: ./mp3-proxy/Dockerfile
     container_name: mp3-proxy
     restart: unless-stopped
     ports:

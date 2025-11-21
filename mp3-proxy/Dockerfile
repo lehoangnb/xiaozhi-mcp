@@ -1,14 +1,17 @@
 FROM node:18-alpine
 
-RUN apk add --no-cache ffmpeg wget ca-certificates
+RUN apk add --no-cache git ffmpeg wget ca-certificates
 
 WORKDIR /app
 
-COPY package*.json ./
+# Clone api
+RUN git clone https://github.com/lehoangnb/mp3-api
+
+COPY mp3-proxy/package*.json ./
 
 RUN npm install
 
-COPY . .
+COPY mp3-proxy/* .
 
 # Install mp3-api dependencies
 RUN cd mp3-api && npm install
