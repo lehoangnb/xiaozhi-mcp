@@ -3,7 +3,7 @@ version: '3.8'
 services:
   xiaozhi-mcp:
     build:
-      context: https://github.com/lehoangnb/xiaozhi-mcp.git
+      context: .
       dockerfile: Dockerfile
     environment:
       - MCP_ENDPOINT=your_xiaozhi_endpoint
