@@ -261,7 +261,7 @@ async def main():
 
         # 2. Auto-discovered Python scripts
         # Exclude self, proxy, hidden files, tests, and already configured scripts
-        exclusions = {'mcp_pipe.py', 'mcp_proxy.py', 'setup.py'}
+        exclusions = {'mcp_pipe.py', 'mcp_proxy.py', 'setup.py', 'utils.py'}
         discovered = []
         for f in os.listdir('.'):
             if f.endswith('.py') and not f.startswith(('_', 'test_')) and f not in exclusions:

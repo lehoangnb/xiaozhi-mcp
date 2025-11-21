@@ -14,7 +14,7 @@ const axios = require('axios');
 const { spawn } = require('child_process');
 
 const app = express();
-const PORT = process.env.PORT || 5005;
+const SERVER_PORT = process.env.PROXY_PORT || 5005;
 const MP3_API_URL = process.env.MP3_API_URL || 'http://localhost:5555';
 
 // Audio cache to store downloaded songs in memory
@@ -369,11 +369,11 @@ app.get('/health', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
+app.listen(SERVER_PORT, () => {
     console.log('='.repeat(80));
     console.log('Xiaozhi MP3 Proxy Adapter Server Started');
     console.log('='.repeat(80));
-    console.log(`Server listening on port: ${PORT}`);
+    console.log(`Server listening on port: ${SERVER_PORT}`);
     console.log(`Upstream MP3 API endpoint: ${MP3_API_URL}`);
     console.log(`Audio cache enabled (max ${CACHE_MAX_SIZE} songs in memory)`);
     console.log(`Response format: RELATIVE PATHS (ESP32 auto-appends base URL)`);

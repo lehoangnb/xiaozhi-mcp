@@ -15,4 +15,4 @@ RUN cd mp3-api && npm install
 
 EXPOSE 5005 5555
 
-CMD sh -c "cd mp3-api && npm start & node mp3-proxy.js"
+CMD ["sh", "-c", "cd mp3-api && npm start & node mp3-proxy.js"]
