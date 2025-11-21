@@ -33,141 +33,12 @@ from dotenv import load_dotenv
 # Auto-load environment variables from a .env file if present
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger('MCP_PIPE')
-
-# Reconnection settings
-INITIAL_BACKOFF = 1  # Initial wait time in seconds
-MAX_BACKOFF = 600  # Maximum wait time in seconds
-
-async def connect_with_retry(uri, target):
-    """Connect to WebSocket server with retry mechanism for a given server target."""
-    reconnect_attempt = 0
-    backoff = INITIAL_BACKOFF
-    while True:  # Infinite reconnection
-        try:
-            if reconnect_attempt > 0:
-                logger.info(f"[{target}] Waiting {backoff}s before reconnection attempt {reconnect_attempt}...")
-                await asyncio.sleep(backoff)
-
-            # Attempt to connect
-            await connect_to_server(uri, target)
-
-        except Exception as e:
-            reconnect_attempt += 1
-            logger.warning(f"[{target}] Connection closed (attempt {reconnect_attempt}): {e}")
-            # Calculate wait time for next reconnection (exponential backoff)
-            backoff = min(backoff * 2, MAX_BACKOFF)
-
-async def connect_to_server(uri, target):
-    """Connect to WebSocket server and pipe stdio for the given server target."""
-    try:
-        logger.info(f"[{target}] Connecting to WebSocket server...")
-        async with websockets.connect(uri) as websocket:
-            logger.info(f"[{target}] Successfully connected to WebSocket server")
-
-            # Start server process (built from CLI arg or config)
-            cmd, env = build_server_command(target)
-            process = subprocess.Popen(
-                cmd,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                encoding='utf-8',
-                text=True,
-                env=env
-            )
-            logger.info(f"[{target}] Started server process: {' '.join(cmd)}")
-            
-            # Create two tasks: read from WebSocket and write to process, read from process and write to WebSocket
-            await asyncio.gather(
-                pipe_websocket_to_process(websocket, process, target),
-                pipe_process_to_websocket(process, websocket, target),
-                pipe_process_stderr_to_terminal(process, target)
-            )
-    except websockets.exceptions.ConnectionClosed as e:
-        logger.error(f"[{target}] WebSocket connection closed: {e}")
-        raise  # Re-throw exception to trigger reconnection
-    except Exception as e:
-        logger.error(f"[{target}] Connection error: {e}")
-        raise  # Re-throw exception
-    finally:
-        # Ensure the child process is properly terminated
-        if 'process' in locals():
-            logger.info(f"[{target}] Terminating server process")
-            try:
-                process.terminate()
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-            logger.info(f"[{target}] Server process terminated")
-
-async def pipe_websocket_to_process(websocket, process, target):
-    """Read data from WebSocket and write to process stdin"""
-    try:
-        while True:
-            # Read message from WebSocket
-            message = await websocket.recv()
-            logger.debug(f"[{target}] << {message[:120]}...")
-            
-            # Write to process stdin (in text mode)
-            if isinstance(message, bytes):
-                message = message.decode('utf-8')
-            process.stdin.write(message + '\n')
-            process.stdin.flush()
-    except Exception as e:
-        logger.error(f"[{target}] Error in WebSocket to process pipe: {e}")
-        raise  # Re-throw exception to trigger reconnection
-    finally:
-        # Close process stdin
-        if not process.stdin.closed:
-            process.stdin.close()
-
-async def pipe_process_to_websocket(process, websocket, target):
-    """Read data from process stdout and send to WebSocket"""
-    try:
-        while True:
-            # Read data from process stdout
-            data = await asyncio.to_thread(process.stdout.readline)
-            
-            if not data:  # If no data, the process may have ended
-                logger.info(f"[{target}] Process has ended output")
-                break
-                
-            # Send data to WebSocket
-            logger.debug(f"[{target}] >> {data[:120]}...")
-            # In text mode, data is already a string, no need to decode
-            await websocket.send(data)
-    except Exception as e:
-        logger.error(f"[{target}] Error in process to WebSocket pipe: {e}")
-        raise  # Re-throw exception to trigger reconnection
-
-async def pipe_process_stderr_to_terminal(process, target):
-    """Read data from process stderr and print to terminal"""
-    try:
-        while True:
-            # Read data from process stderr
-            data = await asyncio.to_thread(process.stderr.readline)
-            
-            if not data:  # If no data, the process may have ended
-                logger.info(f"[{target}] Process has ended stderr output")
-                break
-                
-            # Print stderr data to terminal (in text mode, data is already a string)
-            sys.stderr.write(data)
-            sys.stderr.flush()
-    except Exception as e:
-        logger.error(f"[{target}] Error in process stderr pipe: {e}")
-        raise  # Re-throw exception to trigger reconnection
 
 def signal_handler(sig, frame):
     """Handle interrupt signals"""
     logger.info("Received interrupt signal, shutting down...")
     sys.exit(0)
+
 
 def load_config():
     """Load JSON config from $MCP_CONFIG or ./mcp_config.json. Return dict or {}."""
@@ -239,43 +110,204 @@ def build_server_command(target=None):
         )
     return [sys.executable, script_path], os.environ.copy()
 
-if __name__ == "__main__":
-    # Register signal handler
-    signal.signal(signal.SIGINT, signal_handler)
-    
-    # Get token from environment variable or command line arguments
-    endpoint_url = os.environ.get('MCP_ENDPOINT')
-    if not endpoint_url:
-        logger.error("Please set the `MCP_ENDPOINT` environment variable")
-        sys.exit(1)
-    
+
+# Configure logging (moved after imports but before async functions)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('MCP_PIPE')
+
+# Reconnection settings
+INITIAL_BACKOFF = 1  # Initial wait time in seconds
+MAX_BACKOFF = 600  # Maximum wait time in seconds
+
+
+async def connect_with_retry(uri, target):
+    """Connect to WebSocket server with retry mechanism for a given server target."""
+    reconnect_attempt = 0
+    backoff = INITIAL_BACKOFF
+    while True:  # Infinite reconnection
+        try:
+            if reconnect_attempt > 0:
+                logger.info(f"[{target}] Waiting {backoff}s before reconnection attempt {reconnect_attempt}...")
+                await asyncio.sleep(backoff)
+
+            # Attempt to connect
+            await connect_to_server(uri, target)
+
+        except Exception as e:
+            reconnect_attempt += 1
+            logger.warning(f"[{target}] Connection closed (attempt {reconnect_attempt}): {e}")
+            # Calculate wait time for next reconnection (exponential backoff)
+            backoff = min(backoff * 2, MAX_BACKOFF)
+
+
+async def connect_to_server(uri, target):
+    """Connect to WebSocket server and pipe stdio for the given server target."""
+    try:
+        logger.info(f"[{target}] Connecting to WebSocket server...")
+        async with websockets.connect(uri) as websocket:
+            logger.info(f"[{target}] Successfully connected to WebSocket server")
+
+            # Start server process (built from CLI arg or config)
+            cmd, env = build_server_command(target)
+            process = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                encoding='utf-8',
+                text=True,
+                env=env
+            )
+            logger.info(f"[{target}] Started server process: {' '.join(cmd)}")
+
+            # Create two tasks: read from WebSocket and write to process, read from process and write to WebSocket
+            await asyncio.gather(
+                pipe_websocket_to_process(websocket, process, target),
+                pipe_process_to_websocket(process, websocket, target),
+                pipe_process_stderr_to_terminal(process, target)
+            )
+    except websockets.exceptions.ConnectionClosed as e:
+        logger.error(f"[{target}] WebSocket connection closed: {e}")
+        raise  # Re-throw exception to trigger reconnection
+    except Exception as e:
+        logger.error(f"[{target}] Connection error: {e}")
+        raise  # Re-throw exception
+    finally:
+        # Ensure the child process is properly terminated
+        if 'process' in locals():
+            logger.info(f"[{target}] Terminating server process")
+            try:
+                process.terminate()
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+            logger.info(f"[{target}] Server process terminated")
+
+
+async def pipe_websocket_to_process(websocket, process, target):
+    """Read data from WebSocket and write to process stdin"""
+    try:
+        while True:
+            # Read message from WebSocket
+            message = await websocket.recv()
+            logger.debug(f"[{target}] << {message[:120]}...")
+
+            # Write to process stdin (in text mode)
+            if isinstance(message, bytes):
+                message = message.decode('utf-8')
+            process.stdin.write(message + '\n')
+            process.stdin.flush()
+    except Exception as e:
+        logger.error(f"[{target}] Error in WebSocket to process pipe: {e}")
+        raise  # Re-throw exception to trigger reconnection
+    finally:
+        # Close process stdin
+        if not process.stdin.closed:
+            process.stdin.close()
+
+
+async def pipe_process_to_websocket(process, websocket, target):
+    """Read data from process stdout and send to WebSocket"""
+    try:
+        while True:
+            # Read data from process stdout
+            data = await asyncio.to_thread(process.stdout.readline)
+
+            if not data:  # If no data, the process may have ended
+                logger.info(f"[{target}] Process has ended output")
+                break
+
+            # Send data to WebSocket
+            logger.debug(f"[{target}] >> {data[:120]}...")
+            # In text mode, data is already a string, no need to decode
+            await websocket.send(data)
+    except Exception as e:
+        logger.error(f"[{target}] Error in process to WebSocket pipe: {e}")
+        raise  # Re-throw exception to trigger reconnection
+
+
+async def pipe_process_stderr_to_terminal(process, target):
+    """Read data from process stderr and print to terminal"""
+    try:
+        while True:
+            # Read data from process stderr
+            data = await asyncio.to_thread(process.stderr.readline)
+
+            if not data:  # If no data, the process may have ended
+                logger.info(f"[{target}] Process has ended stderr output")
+                break
+
+            # Print stderr data to terminal (in text mode, data is already a string)
+            sys.stderr.write(data)
+            sys.stderr.flush()
+    except Exception as e:
+        logger.error(f"[{target}] Error in process stderr pipe: {e}")
+        raise  # Re-throw exception to trigger reconnection
+
+
+async def main():
     # Determine target: default to all if no arg; single target otherwise
     target_arg = sys.argv[1] if len(sys.argv) >= 2 else None
 
-    async def _main():
-        if not target_arg:
-            cfg = load_config()
-            servers_cfg = (cfg.get("mcpServers") or {})
-            all_servers = list(servers_cfg.keys())
-            enabled = [name for name, entry in servers_cfg.items() if not (entry or {}).get("disabled")]
-            skipped = [name for name in all_servers if name not in enabled]
-            if skipped:
-                logger.info(f"Skipping disabled servers: {', '.join(skipped)}")
-            if not enabled:
-                raise RuntimeError("No enabled mcpServers found in config")
-            logger.info(f"Starting servers: {', '.join(enabled)}")
-            tasks = [asyncio.create_task(connect_with_retry(endpoint_url, t)) for t in enabled]
-            # Run all forever; if any crashes it will auto-retry inside
-            await asyncio.gather(*tasks)
+    if not target_arg:
+        cfg = load_config()
+        servers_cfg = (cfg.get("mcpServers") or {})
+
+        # 1. Configured servers
+        enabled_configured = [name for name, entry in servers_cfg.items() if not (entry or {}).get("disabled")]
+
+        # 2. Auto-discovered Python scripts
+        # Exclude self, proxy, hidden files, tests, and already configured scripts
+        exclusions = {'mcp_pipe.py', 'mcp_proxy.py', 'setup.py'}
+        discovered = []
+        for f in os.listdir('.'):
+            if f.endswith('.py') and not f.startswith(('_', 'test_')) and f not in exclusions:
+                # Check if this script is already covered by a configured server command
+                # (Simple check: if any configured server's command ends with this filename)
+                is_configured = False
+                for s_name in enabled_configured:
+                    s_cmd = servers_cfg[s_name].get("args", [])
+                    if any(str(arg).endswith(f) for arg in s_cmd):
+                        is_configured = True
+                        break
+
+                if not is_configured:
+                    discovered.append(f)
+
+        all_targets = enabled_configured + discovered
+
+        if not all_targets:
+            logger.warning("No configured servers or Python scripts found to run.")
+            return
+
+        logger.info(f"Starting servers: {', '.join(all_targets)}")
+        endpoint_url = os.environ.get('MCP_ENDPOINT')
+        if not endpoint_url:
+            logger.error("Please set the `MCP_ENDPOINT` environment variable")
+            return
+        tasks = [asyncio.create_task(connect_with_retry(endpoint_url, t)) for t in all_targets]
+        # Run all forever; if any crashes it will auto-retry inside
+        await asyncio.gather(*tasks)
+    else:
+        if os.path.exists(target_arg):
+            endpoint_url = os.environ.get('MCP_ENDPOINT')
+            if not endpoint_url:
+                logger.error("Please set the `MCP_ENDPOINT` environment variable")
+                return
+            await connect_with_retry(endpoint_url, target_arg)
         else:
-            if os.path.exists(target_arg):
-                await connect_with_retry(endpoint_url, target_arg)
-            else:
-                logger.error("Argument must be a local Python script path. To run configured servers, run without arguments.")
-                sys.exit(1)
+            logger.error("Argument must be a local Python script path. To run configured servers, run without arguments.")
+
+
+if __name__ == "__main__":
+    # Register signal handler
+    signal.signal(signal.SIGINT, signal_handler)
 
     try:
-        asyncio.run(_main())
+        asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Program interrupted by user")
     except Exception as e:
