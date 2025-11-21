@@ -104,7 +104,7 @@ def fetch_gold_prices_from_sjc() -> Dict[str, Dict[str, str]]:
 
     # If no valid cache, fetch from API
     url = "https://sjc.com.vn/GoldPrice/Services/PriceService.ashx"
-    
+
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -116,70 +116,74 @@ def fetch_gold_prices_from_sjc() -> Dict[str, Dict[str, str]]:
         "Accept-Encoding": "gzip, deflate, br",
         "Connection": "keep-alive",
     }
-    
-    try:
-        logger.debug("Fetching SJC gold prices from API: %s", url)
-        resp = requests.get(url, headers=headers, timeout=15)
-        resp.raise_for_status()
-        json_data = resp.json()
-        logger.debug("Successfully fetched SJC gold prices from API")
-        
-        if not json_data.get("success"):
-            logger.error("API returned success=false")
-            return {"error": "API returned success=false"}
-        
-        prices: Dict[str, Dict[str, str]] = {}
-        
-        # Process the data from the API
-        data_list = json_data.get("data", [])
-        for item in data_list:
-            type_name = item.get("TypeName", "")
-            branch_name = item.get("BranchName", "")
-            buy_price = item.get("Buy", "")  # Price in thousands VND
-            sell_price = item.get("Sell", "")  # Price in thousands VND
-            
-            # Only add if we have actual price values
-            if type_name and branch_name and buy_price and sell_price:
-                # The API already includes thousands separators, so we just need to format properly
-                # Example: "148,300" means 148,300,000 VND per lượng
-                formatted_buy = replace_with_dot(buy_price)
-                formatted_sell = replace_with_dot(sell_price)
-                
-                product_name = f"{type_name} - {branch_name}"
-                prices[product_name] = {"Mua vào": formatted_buy, "Bán ra": formatted_sell}
-                logger.debug("Found gold price: %s - Mua: %s, Bán: %s", product_name, formatted_buy, formatted_sell)
-        
-        if prices:
-            logger.debug("Parsed %d entries from SJC API.", len(prices))
-            # Write to cache for future requests
-            latest_date = json_data.get("latestDate", "")
-            _write_cache(prices, latest_date)
-            return prices
-        else:
-            logger.warning("No gold prices found in SJC API response.")
-            return {"error": "No gold prices found in SJC API response."}
 
-    except requests.exceptions.RequestException as e:
-        logger.error("Request error when fetching SJC API: %s", e)
-        # If API request fails but we have cache data, return the cached data
-        if cached_prices is not None:
-            logger.info("API request failed, using cached data")
-            return cached_prices
-        return {"error": f"Request error when fetching SJC API: {e}"}
-    except ValueError as e:  # JSON decode error
-        logger.error("Error parsing JSON response from SJC API: %s", e)
-        # If API request fails but we have cache data, return the cached data
-        if cached_prices is not None:
-            logger.info("API request failed, using cached data")
-            return cached_prices
-        return {"error": f"Error parsing JSON response from SJC API: {e}"}
-    except Exception as e:
-        logger.exception("Error fetching SJC API")
-        # If API request fails but we have cache data, return the cached data
-        if cached_prices is not None:
-            logger.info("API request failed, using cached data")
-            return cached_prices
-        return {"error": f"Error fetching SJC API: {e}"}
+    for attempt in range(3):
+        try:
+            logger.debug("Fetching SJC gold prices from API: %s (attempt %d)", url, attempt + 1)
+            resp = requests.get(url, headers=headers, timeout=15)
+            resp.raise_for_status()
+            json_data = resp.json()
+            logger.debug("Successfully fetched SJC gold prices from API")
+
+            if not json_data.get("success"):
+                logger.error("API returned success=false")
+                return {"error": "API returned success=false"}
+
+            prices: Dict[str, Dict[str, str]] = {}
+
+            # Process the data from the API
+            data_list = json_data.get("data", [])
+            for item in data_list:
+                type_name = item.get("TypeName", "")
+                branch_name = item.get("BranchName", "")
+                buy_price = item.get("Buy", "")  # Price in thousands VND
+                sell_price = item.get("Sell", "")  # Price in thousands VND
+
+                # Only add if we have actual price values
+                if type_name and branch_name and buy_price and sell_price:
+                    # The API already includes thousands separators, so we just need to format properly
+                    # Example: "148,300" means 148,300,000 VND per lượng
+                    formatted_buy = replace_with_dot(buy_price)
+                    formatted_sell = replace_with_dot(sell_price)
+
+                    product_name = f"{type_name} - {branch_name}"
+                    prices[product_name] = {"Mua vào": formatted_buy, "Bán ra": formatted_sell}
+                    logger.debug("Found gold price: %s - Mua: %s, Bán: %s", product_name, formatted_buy, formatted_sell)
+
+            if prices:
+                logger.debug("Parsed %d entries from SJC API.", len(prices))
+                # Write to cache for future requests
+                latest_date = json_data.get("latestDate", "")
+                _write_cache(prices, latest_date)
+                return prices
+            else:
+                logger.warning("No gold prices found in SJC API response.")
+                return {"error": "No gold prices found in SJC API response."}
+
+        except requests.exceptions.RequestException as e:
+            logger.error("Request error when fetching SJC API (attempt %d): %s", attempt + 1, e)
+            if attempt == 2:
+                # If all 3 attempts fail and we have cache data, return the cached data
+                if cached_prices is not None:
+                    logger.info("All API requests failed, using cached data")
+                    return cached_prices
+                return {"error": f"Request error when fetching SJC API after 3 attempts: {e}"}
+        except ValueError as e:  # JSON decode error
+            logger.error("Error parsing JSON response from SJC API (attempt %d): %s", attempt + 1, e)
+            if attempt == 2:
+                # If all 3 attempts fail and we have cache data, return the cached data
+                if cached_prices is not None:
+                    logger.info("All API requests failed, using cached data")
+                    return cached_prices
+                return {"error": f"Error parsing JSON response from SJC API after 3 attempts: {e}"}
+        except Exception as e:
+            logger.exception("Error fetching SJC API (attempt %d)", attempt + 1)
+            if attempt == 2:
+                # If all 3 attempts fail and we have cache data, return the cached data
+                if cached_prices is not None:
+                    logger.info("All API requests failed, using cached data")
+                    return cached_prices
+                return {"error": f"Error fetching SJC API after 3 attempts: {e}"}
 
 
 
