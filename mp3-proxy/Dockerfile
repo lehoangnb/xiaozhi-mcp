@@ -10,6 +10,9 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 5005
+# Install mp3-api dependencies
+RUN cd mp3-api && npm install
 
-CMD ["node", "mp3-proxy.js"]
+EXPOSE 5005 5555
+
+CMD sh -c "cd mp3-api && npm start & node mp3-proxy.js"

@@ -15,44 +15,21 @@ services:
     # volumes:
     #   - ./mcp_config.json:/app/mcp_config.json
 
-  # Service 1: nvhung9/mp3-api (Zing MP3 API)
-  mp3-api:
-    build:
-      context: ./mp3-api
-      dockerfile: Dockerfile
-    container_name: xiaozhi-mp3-api
-    restart: unless-stopped
-    ports:
-      - "5555:5555"  # Port cho mp3-api (có thể truy cập trực tiếp để test)
-    environment:
-      - PORT=5555
-      - NODE_ENV=production
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5555/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-    networks:
-      - xiaozhi-network
-
-  # Service 2: Xiaozhi Adapter (Convert to Xiaozhi format)
+  # Service 1: Xiaozhi Adapter with MP3 API (Convert to Xiaozhi format)
   mp3-proxy:
     build:
       context: ./mp3-proxy
       dockerfile: Dockerfile
-    container_name: xiaozhi-adapter
+    container_name: mp3-proxy
     restart: unless-stopped
     ports:
       - "5005:5005"  # Port cho Xiaozhi (ESP32 sẽ connect vào đây)
+      - "5555:5555"  # Port cho mp3-api (có thể truy cập trực tiếp để test)
     environment:
       - PORT=5005
       - NODE_ENV=production
-      - MP3_API_URL=http://mp3-api:5555
+      - MP3_API_URL=http://localhost:5555
       - SECRET_KEY=your-esp32-secret-key-2024
-    depends_on:
-      mp3-api:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5005/health"]
       interval: 30s
