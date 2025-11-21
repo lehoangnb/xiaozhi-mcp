@@ -1,115 +1,163 @@
-# MCP Sample Project | MCP 示例项目
+# xiaozhi-mcp: Vietnamese Data MCP Servers for Xiaozhi
 
-A powerful interface for extending AI capabilities through remote control, calculations, email operations, knowledge search, and more.
+A collection of MCP (Model Context Protocol) servers providing access to Vietnamese financial data, news, and utilities. This project integrates with AI systems to fetch real-time Vietnamese gold prices (SJC), fuel prices (Petrolimex), news from Dantri.
 
-一个强大的接口，用于通过远程控制、计算、邮件操作、知识搜索等方式扩展AI能力。
+## Features
 
-## Overview | 概述
+- 💰 **SJC Gold Prices**: Real-time gold prices from SJC (Vietnam's state precious metals trading company) across different regions
+- ⛽ **Petrolimex Fuel Prices**: Current fuel prices from Petrolimex (Vietnam's state oil company) with regional variations
+- 📰 **Dantri News**: Latest news headlines and article summaries from Dantri.com.vn across world, Vietnam, sports, and auto categories
+- 🔄 **Auto-Reconnection**: Robust WebSocket connection with exponential backoff retry mechanism
+- 📡 **Multiple Transport Types**: Support for stdio, SSE, and HTTP transports
+- 🐳 **Docker Support**: Containerized deployment with Docker Compose
 
-MCP (Model Context Protocol) is a protocol that allows servers to expose tools that can be invoked by language models. Tools enable models to interact with external systems, such as querying databases, calling APIs, or performing computations. Each tool is uniquely identified by a name and includes metadata describing its schema.
+## Project Structure
 
-MCP（模型上下文协议）是一个允许服务器向语言模型暴露可调用工具的协议。这些工具使模型能够与外部系统交互，例如查询数据库、调用API或执行计算。每个工具都由一个唯一的名称标识，并包含描述其模式的元数据。
+- `mcp_pipe.py`: Main WebSocket proxy that manages MCP server processes and connections
+- `utils.py`: Shared utilities for data normalization and price formatting
+- `sjc_gold.py`: MCP server for SJC gold price data across Vietnamese regions
+- `petrolimex.py`: MCP server for Petrolimex fuel price data
+- `dantri_news.py`: MCP server for Dantri.vn news scraping
+- `mcp_config.json`: Optional configuration for custom server setups
+- `docker/`: Docker deployment files
 
-## Features | 特性
+## Available MCP Tools
 
-- 🔌 Bidirectional communication between AI and external tools | AI与外部工具之间的双向通信
-- 🔄 Automatic reconnection with exponential backoff | 具有指数退避的自动重连机制
-- 📊 Real-time data streaming | 实时数据流传输
-- 🛠️ Easy-to-use tool creation interface | 简单易用的工具创建接口
-- 🔒 Secure WebSocket communication | 安全的WebSocket通信
-- ⚙️ Multiple transport types support (stdio/sse/http) | 支持多种传输类型（stdio/sse/http）
+### SJC Gold Price Tools
+- `get_gold_prices()`: All SJC gold prices
+- `get_northern_gold_prices()`: Northern region prices
+- `get_hcm_gold_prices()`: Ho Chi Minh City prices
+- `get_halong_gold_prices()`: Ha Long prices
+- `get_haiphong_gold_prices()`: Hai Phong prices
+- `get_central_gold_prices()`: Central region prices
+- `get_hue_gold_prices()`: Hue prices
+- `get_quangngai_gold_prices()`: Quang Ngai prices
+- `get_nhatrang_gold_prices()`: Nha Trang prices
+- `get_bienhoa_gold_prices()`: Bien Hoa prices
+- `get_southern_gold_prices()`: Southern region prices
 
-## Quick Start | 快速开始
+### Petrolimex Fuel Price Tools
+- `get_fuel_prices()`: Current Petrolimex fuel prices across regions
 
-1. Install dependencies | 安装依赖:
+### Dantri News Tools
+- `get_world_news()`: Latest 5 world news headlines
+- `get_vietnam_news()`: Latest 5 Vietnam news headlines
+- `get_sports_news()`: Latest 5 sports news headlines
+- `get_auto_news()`: Latest 5 auto news headlines
+- `search_news(query)`: Search news by query
+- `get_news_summary(url)`: Get article summary (200 words)
+
+## Quick Start
+
+### Local Development
+
+1. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Set up environment variables | 设置环境变量:
+2. Set environment variables:
 ```bash
-export MCP_ENDPOINT=<your_mcp_endpoint>
+export MCP_ENDPOINT=wss://your-xiaozhi-endpoint
+# Windows: $env:MCP_ENDPOINT = "wss://your-xiaozhi-endpoint"
 ```
 
-3. Run the calculator example | 运行计算器示例:
-```bash
-python mcp_pipe.py calculator.py
-```
-
-Or run all configured servers | 或运行所有配置的服务:
+3. Run all servers:
 ```bash
 python mcp_pipe.py
 ```
 
-*Requires `mcp_config.json` configuration file with server definitions (supports stdio/sse/http transport types)*
-
-*需要 `mcp_config.json` 配置文件定义服务器（支持 stdio/sse/http 传输类型）*
-
-## Project Structure | 项目结构
-
-- `mcp_pipe.py`: Main communication pipe that handles WebSocket connections and process management | 处理WebSocket连接和进程管理的主通信管道
-- `calculator.py`: Example MCP tool implementation for mathematical calculations | 用于数学计算的MCP工具示例实现
-- `requirements.txt`: Project dependencies | 项目依赖
-
-## Config-driven Servers | 通过配置驱动的服务
-
-编辑 `mcp_config.json` 文件来配置服务器列表（也可设置 `MCP_CONFIG` 环境变量指向其他配置文件）。
-
-配置说明：
-- 无参数时启动所有配置的服务（自动跳过 `disabled: true` 的条目）
-- 有参数时运行单个本地脚本文件
-- `type=stdio` 直接启动；`type=sse/http` 通过 `python -m mcp_proxy` 代理
-
-## Creating Your Own MCP Tools | 创建自己的MCP工具
-
-Here's a simple example of creating an MCP tool | 以下是一个创建MCP工具的简单示例:
-
-```python
-from fastmcp import FastMCP
-
-mcp = FastMCP("YourToolName")
-
-@mcp.tool()
-def your_tool(parameter: str) -> dict:
-    """Tool description here"""
-    # Your implementation
-    return {"success": True, "result": result}
-
-if __name__ == "__main__":
-    mcp.run(transport="stdio")
+Or run individual servers for testing:
+```bash
+python mcp_pipe.py calculator.py
+python mcp_pipe.py sjc_gold.py
+python mcp_pipe.py petrolimex.py
+python mcp_pipe.py dantri_news.py
 ```
 
-## Use Cases | 使用场景
+### Docker Deployment
 
-- Mathematical calculations | 数学计算
-- Email operations | 邮件操作
-- Knowledge base search | 知识库搜索
-- Remote device control | 远程设备控制
-- Data processing | 数据处理
-- Custom tool integration | 自定义工具集成
+1. Clone the repository and set environment:
+```bash
+git clone https://github.com/lehoangnb/xiaozhi-mcp.git
+cd xiaozhi-mcp
+```
 
-## Requirements | 环境要求
+2. Set your MCP endpoint in docker-compose.yaml
 
-- Python 3.7+
-- websockets>=11.0.3
-- python-dotenv>=1.0.0
-- mcp>=1.8.1
-- pydantic>=2.11.4
-- mcp-proxy>=0.8.2
+3. Run with Docker Compose:
+```bash
+docker-compose up --build
+```
 
-## Contributing | 贡献指南
+## Configuration
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+### Environment Variables
+- `MCP_ENDPOINT`: WebSocket URL for the MCP connection (required)
+- `MCP_CONFIG`: Path to custom config file (optional, defaults to mcp_config.json)
 
-欢迎贡献代码！请随时提交Pull Request。
+### Custom Configuration
+Edit `mcp_config.json` to configure additional servers:
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "python",
+      "args": ["my_server.py"],
+      "disabled": false
+    }
+  }
+}
+```
 
-## License | 许可证
+## Dependencies
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- `python>=3.7`
+- `fastmcp>=2.13.0`
+- `websockets>=15.0`
+- `requests>=2`
+- `beautifulsoup4>=4.12`
+- `mcp>=1.20.0`
+- `mcp-proxy>=0.10.0`
+- `python-dotenv>=1.2.1`
 
-本项目采用MIT许可证 - 详情请查看LICENSE文件。
+## Data Sources
 
-## Acknowledgments | 致谢
+This project scrapes data from real websites and does not store any data locally (except SJC gold cache for 1 hour):
 
-- Thanks to all contributors who have helped shape this project | 感谢所有帮助塑造这个项目的贡献者
-- Inspired by the need for extensible AI capabilities | 灵感来源于对可扩展AI能力的需求
+- **SJC Gold Prices**: https://sjc.com.vn/ (Vietnam's official gold price tracking)
+- **Petrolimex Fuel Prices**: https://webgia.com/gia-xang-dau/petrolimex/
+- **Dantri News**: https://dantri.com.vn/ (Major Vietnamese news website)
+
+## API Response Format
+
+All price tools return structured data for AI consumption:
+```json
+{
+  "data": [
+    {
+      "product": "Product Name",
+      "region": "Region Name",
+      "price_buy": "buy_price",
+      "price_sell": "sell_price",
+      "price_display": "display_price",
+      "unit": "Triệu đồng một lượng",
+      "updated_at": "2025-01-15T10:30:00+07:00",
+      "source": "https://source.url"
+    }
+  ],
+  "schema_version": "1.0"
+}
+```
+
+## Contributing
+
+Contributions welcome! Add new Vietnamese data sources by:
+1. Creating a new `tool.py` following the existing pattern
+2. Check `utils.normalize_prices_for_ai()` for consistent data formatting
+3. Adding appropriate error handling and logging
+4. Using MCP tools with clear descriptions
+
+## Disclaimer
+
+This project scrapes public websites and provides data access for informational purposes. Users should verify data accuracy and comply with terms of service of respective websites. The developers are not responsible for any use of this data.

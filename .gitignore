@@ -3,3 +3,5 @@ __pycache__/
 node_modules/
 
 .env
+
+sjc_gold_cache.json
