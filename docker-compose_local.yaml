@@ -6,7 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
     env_file: ".env"
-    # environment:
+    environment:
+      - MP3_PROXY_URL=http://mp3-proxy:5005
     #  - MCP_ENDPOINT=your_xiaozhi_endpoint
     #  - SERVER_PATH=custom server py path
     # Adjust ports as needed for your MCP server
@@ -15,12 +16,16 @@ services:
     # If you need to mount a config file, uncomment below:
     # volumes:
     #   - ./mcp_config.json:/app/mcp_config.json
+    depends_on:
+      - mp3-proxy
+    networks:
+      - xiaozhi-network
 
   # Service 1: Xiaozhi Adapter with MP3 API (Convert to Xiaozhi format)
   mp3-proxy:
     build:
       context: ./mp3-proxy
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile_local
     container_name: mp3-proxy
     restart: unless-stopped
     ports:

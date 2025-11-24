@@ -5,3 +5,4 @@ pydantic>=2.12.3
 mcp-proxy>=0.10.0
 fastmcp>=2.13.0.2
 beautifulsoup4>=4.12.2
+requests>=2.31.0

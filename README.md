@@ -1,6 +1,6 @@
 # xiaozhi-mcp: Vietnamese Data MCP Servers for Xiaozhi
 
-A collection of MCP (Model Context Protocol) servers providing access to Vietnamese financial data, news, and utilities. This project integrates with AI systems to fetch real-time Vietnamese gold prices (SJC), fuel prices (Petrolimex), news from Dantri.
+A collection of MCP (Model Context Protocol) servers providing access to Vietnamese financial data, news, radio stations, and music streaming. This project integrates with AI systems to fetch real-time Vietnamese gold prices (SJC), fuel prices (Petrolimex), news from Dantri, radio stations, and music search/playback.
 
 ## Features
 
@@ -47,6 +47,14 @@ A collection of MCP (Model Context Protocol) servers providing access to Vietnam
 - `search_news(query)`: Search news by query
 - `get_news_summary(url)`: Get article summary (200 words)
 
+### Radio Station Tools
+- `get_radio_stations()`: List all available Vietnamese radio stations
+- `get_radio_station_url(station_id_or_name)`: Get streaming URL for a specific radio station
+
+### Music Search Tools
+- `search_music(song, artist?)`: Search for a song and return metadata including stream URL
+- `get_music_stream(song, artist?)`: Get essential stream information for playback
+
 ## Quick Start
 
 ### Local Development
@@ -73,6 +81,7 @@ python mcp_pipe.py calculator.py
 python mcp_pipe.py sjc_gold.py
 python mcp_pipe.py petrolimex.py
 python mcp_pipe.py dantri_news.py
+python mcp_pipe.py radio.py
 ```
 
 ### Docker Deployment
