@@ -1,8 +1,10 @@
 # coding: utf-8
 """
-Radio Stations MCP tool
+Radio Stations and Music MCP tool
 - Provides a list of Vietnamese radio stations (VOV) and their streaming URLs.
-- Allows searching for a station by name.
+- Allows searching for a radio station by name or ID.
+- Provides music search functionality using MP3 proxy service.
+- Supports streaming music with metadata and lyrics.
 """
 
 from fastmcp import FastMCP
@@ -18,6 +20,11 @@ if sys.platform == "win32":
 mcp = FastMCP("Vietnam Radio Stations")
 logger = logging.getLogger("Radio")
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s:%(name)s:%(message)s")
+
+# MP3 Proxy configuration
+# Use service name in Docker, fallback to localhost for local development
+import os
+MP3_PROXY_URL = os.getenv("MP3_PROXY_URL", "http://mp3-proxy:5005")
 
 # Define the radio stations data
 # Structure: Key (ID) -> {name, url, description, genre}
@@ -96,7 +103,7 @@ RADIO_STATIONS = {
     },
     "ZING_RADIO": {
         "name": "Zing radio",
-        "url": "http://192.168.0.220:5005/proxy_audio?stream=zing_mp3",
+        "url": f"{MP3_PROXY_URL}/proxy_audio?stream=zing_mp3",
         "description": "Zing radio",
         "genre": "Music"
     }
@@ -146,11 +153,6 @@ def get_radio_station_url(station_id_or_name: str) -> Dict[str, str]:
             return {"url": data["url"], "name": data["name"]}
 
     return {"error": f"Station '{station_id_or_name}' not found."}
-
-# MP3 Proxy configuration
-# Use service name in Docker, fallback to localhost for local development
-import os
-MP3_PROXY_URL = os.getenv("MP3_PROXY_URL", "http://mp3-proxy:5005")
 
 def _search_music_internal(song: str, artist: str = "") -> Dict[str, any]:
     """
