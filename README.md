@@ -48,7 +48,7 @@ A collection of MCP (Model Context Protocol) servers providing access to Vietnam
 - `get_news_summary(url)`: Get article summary (200 words)
 
 ### Radio Station Tools
-- `get_radio_stations()`: List all available Vietnamese radio stations
+- `get_radio_stations()`: List all available Vietnamese radio stations (Thank to [@TienHuyIoT](https://github.com/TienHuyIoT/xiaozhi-esp32_vietnam))
 - `get_radio_station_url(station_id_or_name)`: Get streaming URL for a specific radio station
 
 ### Music Search Tools

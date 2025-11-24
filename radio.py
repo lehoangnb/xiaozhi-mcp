@@ -27,85 +27,98 @@ import os
 MP3_PROXY_URL = os.getenv("MP3_PROXY_URL", "http://mp3-proxy:5005")
 
 # Define the radio stations data
-# Structure: Key (ID) -> {name, url, description, genre}
+# Structure: Key (ID) -> {name, url, description, genre, volume}
 RADIO_STATIONS = {
     "VOV1": {
         "name": "VOV 1 - Đài Tiếng nói Việt Nam",
         "url": "https://stream.vovmedia.vn/vov-1",
         "description": "Kênh thông tin tổng hợp",
-        "genre": "News/Talk"
+        "genre": "News/Talk",
+        "volume": 4.5
     },
     "VOV2": {
         "name": "VOV 2 - Âm thanh Việt Nam",
         "url": "https://stream.vovmedia.vn/vov-2",
         "description": "Kênh văn hóa - văn nghệ",
-        "genre": "Culture/Music"
+        "genre": "Culture/Music",
+        "volume": 4.0
     },
     "VOV3": {
         "name": "VOV 3 - Tiếng nói Việt Nam",
         "url": "https://stream.vovmedia.vn/vov-3",
         "description": "Kênh thông tin - giải trí",
-        "genre": "Entertainment"
+        "genre": "Entertainment",
+        "volume": 4.5
     },
     "VOV5": {
         "name": "VOV 5 - Tiếng nói người Việt",
         "url": "https://stream.vovmedia.vn/vov5",
         "description": "Kênh dành cho người Việt ở nước ngoài",
-        "genre": "Overseas Vietnamese"
+        "genre": "Overseas Vietnamese",
+        "volume": 4.5
     },
     "VOVGT": {
         "name": "VOV Giao thông Hà Nội",
         "url": "https://stream.vovmedia.vn/vovgt-hn",
         "description": "Thông tin giao thông Hà Nội",
-        "genre": "Traffic"
+        "genre": "Traffic",
+        "volume": 5.0
     },
     "VOVGT_HCM": {
         "name": "VOV Giao thông Hồ Chí Minh",
         "url": "https://stream.vovmedia.vn/vovgt-hcm",
         "description": "Thông tin giao thông TP. Hồ Chí Minh",
-        "genre": "Traffic"
+        "genre": "Traffic",
+        "volume": 5.0
     },
     "VOV_ENGLISH": {
         "name": "VOV English Tiếng Anh",
         "url": "https://stream.vovmedia.vn/vov247",
         "description": "VOV English Service",
-        "genre": "International"
+        "genre": "International",
+        "volume": 1.0
     },
     "VOV_MEKONG": {
         "name": "VOV Mê Kông",
         "url": "https://stream.vovmedia.vn/vovmekong",
         "description": "Kênh vùng Đồng bằng sông Cửu Long",
-        "genre": "Regional"
+        "genre": "Regional",
+        "volume": 4.5
     },
     "VOV_MIENTRUNG": {
         "name": "VOV Miền Trung",
         "url": "https://stream.vovmedia.vn/vov4mt",
         "description": "Kênh vùng miền Trung",
-        "genre": "Regional"
+        "genre": "Regional",
+        "volume": 4.5
     },
     "VOV_TAYBAC": {
         "name": "VOV Tây Bắc",
         "url": "https://stream.vovmedia.vn/vov4tb",
         "description": "Kênh vùng Tây Bắc",
-        "genre": "Regional"
+        "genre": "Regional",
+        "volume": 4.5
     },
     "VOV_DONGBAC": {
         "name": "VOV Đông Bắc",
         "url": "https://stream.vovmedia.vn/vov4db",
         "description": "Kênh vùng Đông Bắc",
-        "genre": "Regional"
+        "genre": "Regional",
+        "volume": 4.4
     },
     "VOV_TAYNGUYEN": {
         "name": "VOV Tây Nguyên",
         "url": "https://stream.vovmedia.vn/vov4tn",
         "description": "Kênh vùng Tây Nguyên",
-        "genre": "Regional"
+        "genre": "Regional",
+        "volume": 5.0
     },
     "ZING_RADIO": {
         "name": "Zing radio",
         "url": f"{MP3_PROXY_URL}/proxy_audio?stream=zing_mp3",
         "description": "Zing radio",
-        "genre": "Music"
+        "genre": "Music",
+        "volume": 1.0
     }
 }
 
@@ -127,30 +140,30 @@ def get_radio_stations() -> List[Dict[str, str]]:
     return stations
 
 @mcp.tool()
-def get_radio_station_url(station_id_or_name: str) -> Dict[str, str]:
+def get_radio_station_url(station_id_or_name: str) -> Dict[str, any]:
     """
     Get the streaming URL for a specific radio station.
     Args:
         station_id_or_name: The ID (e.g., "VOV1") or name (e.g., "VOV 1") of the station.
     Returns:
-        A dictionary with "url" and "name" if found, or an error message.
+        A dictionary with "url", "name", and "volume" if found, or an error message.
     """
     query = station_id_or_name.lower().strip()
 
     # Direct ID match
     if station_id_or_name in RADIO_STATIONS:
         data = RADIO_STATIONS[station_id_or_name]
-        return {"url": data["url"], "name": data["name"]}
+        return {"url": data["url"], "name": data["name"], "volume": data["volume"]}
 
     # Case-insensitive ID match
     for sid, data in RADIO_STATIONS.items():
         if sid.lower() == query:
-            return {"url": data["url"], "name": data["name"]}
+            return {"url": data["url"], "name": data["name"], "volume": data["volume"]}
 
     # Name match (partial)
     for sid, data in RADIO_STATIONS.items():
         if query in data["name"].lower():
-            return {"url": data["url"], "name": data["name"]}
+            return {"url": data["url"], "name": data["name"], "volume": data["volume"]}
 
     return {"error": f"Station '{station_id_or_name}' not found."}
 
