@@ -34,91 +34,91 @@ RADIO_STATIONS = {
         "url": "https://stream.vovmedia.vn/vov-1",
         "description": "Kênh thông tin tổng hợp",
         "genre": "News/Talk",
-        "volume": 4.5
+        "volume": 450  # 4.5x volume as integer (divide by 100)
     },
     "VOV2": {
         "name": "VOV 2 - Âm thanh Việt Nam",
         "url": "https://stream.vovmedia.vn/vov-2",
         "description": "Kênh văn hóa - văn nghệ",
         "genre": "Culture/Music",
-        "volume": 4.0
+        "volume": 400  # 4.0x volume as integer (divide by 100)
     },
     "VOV3": {
         "name": "VOV 3 - Tiếng nói Việt Nam",
         "url": "https://stream.vovmedia.vn/vov-3",
         "description": "Kênh thông tin - giải trí",
         "genre": "Entertainment",
-        "volume": 4.5
+        "volume": 450  # 4.5x volume as integer (divide by 100)
     },
     "VOV5": {
         "name": "VOV 5 - Tiếng nói người Việt",
         "url": "https://stream.vovmedia.vn/vov5",
         "description": "Kênh dành cho người Việt ở nước ngoài",
         "genre": "Overseas Vietnamese",
-        "volume": 4.5
+        "volume": 450  # 4.5x volume as integer (divide by 100)
     },
     "VOVGT": {
         "name": "VOV Giao thông Hà Nội",
         "url": "https://stream.vovmedia.vn/vovgt-hn",
         "description": "Thông tin giao thông Hà Nội",
         "genre": "Traffic",
-        "volume": 5.0
+        "volume": 500  # 5.0x volume as integer (divide by 100)
     },
     "VOVGT_HCM": {
         "name": "VOV Giao thông Hồ Chí Minh",
         "url": "https://stream.vovmedia.vn/vovgt-hcm",
         "description": "Thông tin giao thông TP. Hồ Chí Minh",
         "genre": "Traffic",
-        "volume": 5.0
+        "volume": 500  # 5.0x volume as integer (divide by 100)
     },
     "VOV_ENGLISH": {
         "name": "VOV English Tiếng Anh",
         "url": "https://stream.vovmedia.vn/vov247",
         "description": "VOV English Service",
         "genre": "International",
-        "volume": 1.0
+        "volume": 100  # 1.0x volume as integer (divide by 100)
     },
     "VOV_MEKONG": {
         "name": "VOV Mê Kông",
         "url": "https://stream.vovmedia.vn/vovmekong",
         "description": "Kênh vùng Đồng bằng sông Cửu Long",
         "genre": "Regional",
-        "volume": 4.5
+        "volume": 450  # 4.5x volume as integer (divide by 100)
     },
     "VOV_MIENTRUNG": {
         "name": "VOV Miền Trung",
         "url": "https://stream.vovmedia.vn/vov4mt",
         "description": "Kênh vùng miền Trung",
         "genre": "Regional",
-        "volume": 4.5
+        "volume": 450  # 4.5x volume as integer (divide by 100)
     },
     "VOV_TAYBAC": {
         "name": "VOV Tây Bắc",
         "url": "https://stream.vovmedia.vn/vov4tb",
         "description": "Kênh vùng Tây Bắc",
         "genre": "Regional",
-        "volume": 4.5
+        "volume": 450  # 4.5x volume as integer (divide by 100)
     },
     "VOV_DONGBAC": {
         "name": "VOV Đông Bắc",
         "url": "https://stream.vovmedia.vn/vov4db",
         "description": "Kênh vùng Đông Bắc",
         "genre": "Regional",
-        "volume": 4.4
+        "volume": 440  # 4.4x volume as integer (divide by 100)
     },
     "VOV_TAYNGUYEN": {
         "name": "VOV Tây Nguyên",
         "url": "https://stream.vovmedia.vn/vov4tn",
         "description": "Kênh vùng Tây Nguyên",
         "genre": "Regional",
-        "volume": 5.0
+        "volume": 500  # 5.0x volume as integer (divide by 100)
     },
     "ZING_RADIO": {
         "name": "Zing radio",
         "url": f"{MP3_PROXY_URL}/proxy_audio?stream=zing_mp3",
         "description": "Zing radio",
         "genre": "Music",
-        "volume": 1.0
+        "volume": 100  # 1.0x volume as integer (divide by 100)
     }
 }
 
