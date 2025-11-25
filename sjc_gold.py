@@ -26,7 +26,7 @@ if sys.platform == "win32":
 # Initialise FastMCP server and logger for SJC Gold
 mcp = FastMCP("SJC Gold Prices")
 logger = logging.getLogger("SJC_Gold")
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)s:%(name)s:%(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
 def replace_with_dot(s):
     """
@@ -198,6 +198,7 @@ def get_gold_prices() -> dict:
        "schema_version": "1.0" }
     On failure returns {"error": "..."}
     """
+    logger.info("Tool requested: get_gold_prices")
     raw = fetch_gold_prices_from_sjc()
     structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/")
     return {"data": structured, "schema_version": "1.0"}
@@ -224,6 +225,7 @@ def get_northern_gold_prices() -> dict:
        "schema_version": "1.0" }
     On failure returns {"error": "..."}
     """
+    logger.info("Tool requested: get_northern_gold_prices")
     return get_gold_prices_by_region("Miền Bắc")
 
 
@@ -231,46 +233,55 @@ def get_northern_gold_prices() -> dict:
 @mcp.tool()
 def get_hcm_gold_prices() -> dict:
     """Get SJC gold prices for Ho Chi Minh City region."""
+    logger.info("Tool requested: get_hcm_gold_prices")
     return get_gold_prices_by_region("Hồ Chí Minh")
 
 @mcp.tool()
 def get_halong_gold_prices() -> dict:
     """Get SJC gold prices for Ha Long region."""
+    logger.info("Tool requested: get_halong_gold_prices")
     return get_gold_prices_by_region("Hạ Long")
 
 @mcp.tool()
 def get_haiphong_gold_prices() -> dict:
     """Get SJC gold prices for Hai Phong region."""
+    logger.info("Tool requested: get_haiphong_gold_prices")
     return get_gold_prices_by_region("Hải Phòng")
 
 @mcp.tool()
 def get_central_gold_prices() -> dict:
     """Get SJC gold prices for Central region."""
+    logger.info("Tool requested: get_central_gold_prices")
     return get_gold_prices_by_region("Miền Trung")
 
 @mcp.tool()
 def get_hue_gold_prices() -> dict:
     """Get SJC gold prices for Hue region."""
+    logger.info("Tool requested: get_hue_gold_prices")
     return get_gold_prices_by_region("Huế")
 
 @mcp.tool()
 def get_quangngai_gold_prices() -> dict:
     """Get SJC gold prices for Quang Ngai region."""
+    logger.info("Tool requested: get_quangngai_gold_prices")
     return get_gold_prices_by_region("Quảng Ngãi")
 
 @mcp.tool()
 def get_nhatrang_gold_prices() -> dict:
     """Get SJC gold prices for Nha Trang region."""
+    logger.info("Tool requested: get_nhatrang_gold_prices")
     return get_gold_prices_by_region("Nha Trang")
 
 @mcp.tool()
 def get_bienhoa_gold_prices() -> dict:
     """Get SJC gold prices for Bien Hoa region."""
+    logger.info("Tool requested: get_bienhoa_gold_prices")
     return get_gold_prices_by_region("Biên Hòa")
 
 @mcp.tool()
 def get_southern_gold_prices() -> dict:
     """Get SJC gold prices for Southern region."""
+    logger.info("Tool requested: get_southern_gold_prices")
     raw = fetch_gold_prices_from_sjc()
     structured = normalize_prices_for_ai(raw, "https://sjc.com.vn/", "gold")
     southern_prices = [item for item in structured if any(region in item.get("region", "") for region in ["Miền Tây", "Bạc Liêu", "Cà Mau"])]

@@ -126,31 +126,37 @@ def fetch_news_with_fallback(url: str, fallback_query: str) -> list[str]:
 @mcp.tool()
 def get_world_news() -> list[str]:
     """Return the latest 5 world‑news headlines (the‑gioi)."""
+    logger.info("Tool requested: get_world_news")
     return fetch_news_with_fallback("https://dantri.com.vn/the-gioi.htm", "the gioi")
 
 @mcp.tool()
 def get_vietnam_news() -> list[str]:
     """Return the latest 5 Vietnam‑news headlines (thoi‑su)."""
+    logger.info("Tool requested: get_vietnam_news")
     return fetch_news_with_fallback("https://dantri.com.vn/thoi-su.htm", "thoi su")
 
 @mcp.tool()
 def get_sports_news() -> list[str]:
     """Return the latest 5 sports headlines (the‑thao)."""
+    logger.info("Tool requested: get_sports_news")
     return fetch_news_with_fallback("https://dantri.com.vn/the-thao.htm", "the thao")
 
 @mcp.tool()
 def get_auto_news() -> list[str]:
     """Return the latest 5 auto (oto, xe máy) headlines."""
+    logger.info("Tool requested: get_auto_news")
     return fetch_news_with_fallback("https://dantri.com.vn/o-to-xe-may.htm", "oto xe may")
 
 @mcp.tool()
 def get_news_summary(url: str) -> str:
     """Return a ~200‑word summary for the given Dantri article URL."""
+    logger.info("Tool requested: get_news_summary")
     return fetch_article_summary(url)
 
 @mcp.tool()
 def search_news(query: str) -> list[str]:
     """Search Dantri for the given query and return up to 5 headlines."""
+    logger.info("Tool requested: search_news")
     return search_dantri(query)
 
 if __name__ == "__main__":

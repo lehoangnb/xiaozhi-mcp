@@ -23,7 +23,7 @@ if sys.platform == "win32":
 # Initialise FastMCP server and logger for Petrolimex
 mcp = FastMCP("Petrolimex Fuel Prices")
 logger = logging.getLogger("Petrolimex")
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)s:%(name)s:%(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
 
 def _clean_number_str(s: str) -> str:
@@ -153,6 +153,7 @@ def get_fuel_prices() -> dict:
        "schema_version": "1.0" }
     On failure returns {"error": "..."}
     """
+    logger.info("Tool requested: get_fuel_prices")
     raw = fetch_fuel_prices_from_webgia()
     structured = normalize_prices_for_ai(raw, "https://webgia.com/gia-xang-dau/petrolimex/", "fuel")
     return {"data": structured, "schema_version": "1.0"}

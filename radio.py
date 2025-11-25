@@ -19,7 +19,7 @@ if sys.platform == "win32":
 
 mcp = FastMCP("Vietnam Radio Stations")
 logger = logging.getLogger("Radio")
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)s:%(name)s:%(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
 # MP3 Proxy configuration
 # Use service name in Docker, fallback to localhost for local development
@@ -129,6 +129,7 @@ def get_radio_stations() -> List[Dict[str, str]]:
     Returns a list of dictionaries containing station details (id, name, description, genre).
     Does NOT return the URL to keep the context small; use get_radio_station_url for that.
     """
+    logger.info("Tool requested: get_radio_stations")
     stations = []
     for station_id, data in RADIO_STATIONS.items():
         stations.append({
@@ -148,6 +149,7 @@ def get_radio_station_url(station_id_or_name: str) -> Dict[str, any]:
     Returns:
         A dictionary with "url", "name", and "volume" if found, or an error message.
     """
+    logger.info("Tool requested: get_radio_station_url")
     query = station_id_or_name.lower().strip()
 
     # Direct ID match
@@ -223,6 +225,7 @@ def search_music(song: str, artist: str = "") -> Dict[str, any]:
     Returns:
         A dictionary with song metadata including stream URL, or an error message.
     """
+    logger.info("Tool requested: search_music")
     return _search_music_internal(song, artist)
 
 @mcp.tool()
@@ -236,6 +239,7 @@ def get_music_stream(song: str, artist: str = "") -> Dict[str, any]:
     Returns:
         A dictionary with stream URL and metadata for playback.
     """
+    logger.info("Tool requested: get_music_stream")
     result = _search_music_internal(song, artist)
 
     if "error" in result:
