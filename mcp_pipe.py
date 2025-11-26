@@ -288,16 +288,36 @@ async def main():
         if not endpoint_url:
             logger.error("Please set the `MCP_ENDPOINT` environment variable")
             return
-        tasks = [asyncio.create_task(connect_with_retry(endpoint_url, t)) for t in all_targets]
-        # Run all forever; if any crashes it will auto-retry inside
-        await asyncio.gather(*tasks)
+
+        # Reload loop every 5 minutes (300 seconds)
+        while True:
+            tasks = [asyncio.create_task(connect_with_retry(endpoint_url, t)) for t in all_targets]
+            # Wait for 5 minutes or until tasks complete (which they won't normally)
+            done, pending = await asyncio.wait(tasks, timeout=300)
+            # Cancel any pending tasks (all of them after timeout)
+            for task in pending:
+                task.cancel()
+            # Wait for cancelled tasks to complete
+            await asyncio.gather(*pending, return_exceptions=True)
+            logger.info("Reloading servers...")
     else:
         if os.path.exists(target_arg):
             endpoint_url = os.environ.get('MCP_ENDPOINT')
             if not endpoint_url:
                 logger.error("Please set the `MCP_ENDPOINT` environment variable")
                 return
-            await connect_with_retry(endpoint_url, target_arg)
+
+            # Reload loop every 5 minutes (300 seconds)
+            while True:
+                task = asyncio.create_task(connect_with_retry(endpoint_url, target_arg))
+                # Wait for 5 minutes or until task completes
+                done, pending = await asyncio.wait([task], timeout=300)
+                # Cancel any pending tasks
+                for t in pending:
+                    t.cancel()
+                # Wait for cancelled tasks to complete
+                await asyncio.gather(*pending, return_exceptions=True)
+                logger.info("Reloading server...")
         else:
             logger.error("Argument must be a local Python script path. To run configured servers, run without arguments.")
 
